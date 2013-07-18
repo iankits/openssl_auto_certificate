@@ -1,13 +1,18 @@
 #!/bin/sh
-# Author: Ankit Singh
+# Author: Ankit Singh, 2013
 # 
 # This is the script to automate the process to creating simple self-signed root CA and server certificate using the shell script
 # 
 # TEST Script with the following command:
 # . cert_ops.sh "DE" "HE" "FRA" "ME" "TEST" "CERT" "me@my.de"
+#
+# You are free to use this script but absolutely no warranty!
+# 
+# TODO: write function for creating and signing Server certificate
 
 PWD=.
 
+## This function sets the values as per command line attributes passed
 function fill_user_provided_value {
 
 C=$0
@@ -20,6 +25,7 @@ EMAILAD=$6
 
 }
 
+## Provides default values to create CA. Can be anything.
 function constructor_to_setup_values {
 
 C="DE"
@@ -32,6 +38,7 @@ EMAILAD="me@my.com"
 
 }
 
+##  This function checks and validates the command line attributes
 function check_command_line_input {
 
 if [ $# -eq 0 ]; then
@@ -53,6 +60,7 @@ else
 fi
 } 
 
+## This function creates and self-sign root CA
 function create_root_ca {
 
 echo -e "\n##### root CA Certificate Started #####\n"
@@ -63,7 +71,7 @@ if [ $? -eq 0 ]; then
 	
 	echo -e "\n### Please enter Password or Press Enter to give default password (Password123)"
 	read PASS
-	
+	## Checks input whether it is empty or not
 	if [ -n "$PASS" ]; then
 		 echo -e "\n### Thank God! You are not Lazy! :-P ###"
 	else
