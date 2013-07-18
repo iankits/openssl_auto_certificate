@@ -14,7 +14,6 @@ PWD=.
 
 ## This function sets the values as per command line attributes passed
 function fill_user_provided_value {
-
 C=$0
 ST=$1
 L=$2
@@ -22,12 +21,10 @@ O=$3
 OU=$4
 CN=$5
 EMAILAD=$6
-
 }
 
 ## Provides default values to create CA. Can be anything.
 function constructor_to_setup_values {
-
 C="DE"
 ST="HE"
 L="Frankfurt"
@@ -35,17 +32,15 @@ O="MY COMPANY ONLINE"
 OU="SAMPLE"
 CN="Sample Certificate"
 EMAILAD="me@my.com"
-
 }
 
 ##  This function checks and validates the command line attributes
 function check_command_line_input {
-
 if [ $# -eq 0 ]; then
+	# fill the default value for certificate
+	constructor_to_setup_values
 	echo -e "== NO ARGUMENTS == \n== WARNING! Creating Certificate with DEFAULT Value =="
-	echo -e "C=$C\nST=$ST\nL=$L\nO=$O\n$OU=OU\n$CN=CN\nEMAILADDRESS=$EMAILAD\n" 
-	constructor_to_setup_values # fill the default value for certificate
-
+	echo -e "C=$C\nST=$ST\nL=$L\nO=$O\nOU=$OU\nCN=$CN\nEMAILADDRESS=$EMAILAD\n" 
 else
 	if [ $# -eq 7 ]; then
 		echo " == Filling the values for certificate using Users Supplied value"
@@ -56,13 +51,11 @@ else
 		echo -e " ### WARNING! Creating Certificate with DEFAULT Value ## "
 		constructor_to_setup_values
 	fi
-
 fi
 } 
 
 ## This function creates and self-sign root CA
 function create_root_ca {
-
 echo -e "\n##### root CA Certificate Started #####\n"
 echo -e "$C\n$ST\n$L\n$O\n$OU\n$CN\n$EMAILAD\n\n\n" | openssl req -new -x509 -outform PEM -newkey rsa:2048 -nodes -keyout $PWD/ca.key -keyform PEM -out $PWD/ca.crt -days 365
 
