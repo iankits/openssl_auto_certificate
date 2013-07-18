@@ -14,13 +14,13 @@ PWD=.
 
 ## This function sets the values as per command line attributes passed
 function fill_user_provided_value {
-C=$0
-ST=$1
-L=$2
-O=$3
-OU=$4
-CN=$5
-EMAILAD=$6
+C=$1
+ST=$2
+L=$3
+O=$4
+OU=$5
+CN=$6
+EMAILAD=$7
 }
 
 ## Provides default values to create CA. Can be anything.
@@ -34,22 +34,30 @@ CN="Sample Certificate"
 EMAILAD="me@my.com"
 }
 
+function print_attributes {
+    echo -e "C=$C\nST=$ST\nL=$L\nO=$O\nOU=$OU\nCN=$CN\nEMAILADDRESS=$EMAILAD\n"
+}
+
 ##  This function checks and validates the command line attributes
 function check_command_line_input {
 if [ $# -eq 0 ]; then
 	# fill the default value for certificate
 	constructor_to_setup_values
-	echo -e "== NO ARGUMENTS == \n== WARNING! Creating Certificate with DEFAULT Value =="
-	echo -e "C=$C\nST=$ST\nL=$L\nO=$O\nOU=$OU\nCN=$CN\nEMAILADDRESS=$EMAILAD\n" 
+	echo -e "== NO ARGUMENTS == \n== WARNING! Creating Certificate with DEFAULT Value ==" 
+	print_attributes
 else
 	if [ $# -eq 7 ]; then
 		echo " == Filling the values for certificate using Users Supplied value"
-		fill_user_provided_value
+		echo -e "\n== Creating Certificate with User Provided attributes value ==" 
+		fill_user_provided_value $@
+		print_attributes
+
 	else
 		echo -e "### WRONG PARAMETER SUPPLIED ###"
-		echo -e "\n\n### SYNTAX:  ./cert_ops.sh "AT" "HE" "Fra" "ME" "TEST" "CERT" "me@my.de"\n "
+		echo -e "\n\n### SYNTAX:  ./cert_ops.sh "DE" "HE" "Fra" "ME" "TEST" "CERT" "me@my.de"\n "
 		echo -e " ### WARNING! Creating Certificate with DEFAULT Value ## "
 		constructor_to_setup_values
+		print_attributes
 	fi
 fi
 } 
@@ -60,8 +68,7 @@ echo -e "\n##### root CA Certificate Started #####\n"
 echo -e "$C\n$ST\n$L\n$O\n$OU\n$CN\n$EMAILAD\n\n\n" | openssl req -new -x509 -outform PEM -newkey rsa:2048 -nodes -keyout $PWD/ca.key -keyform PEM -out $PWD/ca.crt -days 365
 
 if [ $? -eq 0 ]; then
-	echo -e "\n ##### root CA certificate SUCCESS \n"
-	
+	echo -e "\n ##### root CA certificate SUCCESS \n"	
 	echo -e "\n### Please enter Password or Press Enter to give default password (Password123)"
 	read PASS
 	## Checks input whether it is empty or not
