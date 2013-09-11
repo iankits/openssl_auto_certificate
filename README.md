@@ -26,6 +26,10 @@ USAGE (the script will pick default value from it when you not provide all seven
  OR
         ./cert_ops.sh client
 
+* Generating Diffie-Hellman parameters
+	
+	./cert_ops.sh dh
+
 * Generating all certificates with default values (WARNING: this will create the certificate with same attributes)
 
         ./cert_ops.sh createALL "DE" "HE" "FRA" "ME" "CA" "CERT" "me@CA.de"

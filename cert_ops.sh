@@ -1,8 +1,10 @@
 #!/bin/bash
 # Author: Ankit Singh, 2013
-#
-# This is the script to automate the process to creating simple
+# 
+# This is the script to automate the process to creating simple 
 # self-signed root CA, server and client certificate using the shell script
+#
+# This script also generates Diffie-Hellman parameters for the server side.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,16 +18,16 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
+# 
 # TEST Script with the following command:
 # . cert_ops.sh createALL "DE" "HE" "FRA" "ME" "TEST" "CERT" "me@my.de"
 #
 # Read README for details syntax options and some tweaks
 #
-#
+# 
 
 #DEBUG
-#set -x
+#set -x 
 # Path to the folder where  Certificate to be Saved
 PWD=.
 
@@ -45,6 +47,10 @@ client_cnf=client.cnf
 
 CONFIG=config.cnf
 
+## Parameters for generating diffie helman key
+KEY_DIR=$PWD
+KEY_SIZE=1024
+
 ## Generate Server Config file for OpenVPN
 gen_server_config (){
     echo -e "== Generating server.cnf =="
@@ -60,11 +66,10 @@ ca $ca_cert_file
 cert $server_cert_file
 key $server_key_file
 dh dh1024.pem
-remote-cert-tls client
 
 port 1194
 
-ifconfig 10.0.0.1 255.255.255.0
+server 10.0.0.1/24 255.255.255.0
 client-config-dir vpnclients.ccd
 
 EOT
@@ -81,10 +86,9 @@ tls-client
 ca $ca_cert_file
 cert $client_cert_file
 key $client_key_file
-remote-cert-tls server
-remote $SERVER_IP
+remote $SERVER_IP 
 rport 1194
-pull
+pull 
 
 EOT
 }
@@ -206,109 +210,115 @@ print_attributes () {
 ##  This function checks and validates the command line attributes
 check_command_line_input () {
 if [ $# -eq 1 ]; then
-        # fill the default value for certificate
-        constructor_to_setup_values
-        echo -e "== NO ARGUMENTS == \n### WARNING! Creating Certificate with DEFAULT Value"
-        print_attributes
+	# fill the default value for certificate
+	constructor_to_setup_values
+	echo -e "== NO ARGUMENTS == \n### WARNING! Creating Certificate with DEFAULT Value" 
+	print_attributes
 else
-        if [ $# -eq 8 ]; then
-                echo " == Filling the values for certificate using Users Supplied value"
-                echo -e "\n== Creating Certificate with User Provided attributes value =="
-                fill_user_provided_value $2 $3 $4 $5 $6 $7 $8
-                print_attributes
+	if [ $# -eq 8 ]; then
+		echo " == Filling the values for certificate using Users Supplied value"
+		echo -e "\n== Creating Certificate with User Provided attributes value ==" 
+		fill_user_provided_value $2 $3 $4 $5 $6 $7 $8
+		print_attributes
 else
-        ## Check if it is client request
-        if [[ "$1" == "client" ]]; then
-                echo -e " ### Creating Certificate for the client ### "
-                if [[ "$2" == '' ]]; then
-                        echo -e "\n ## WARNING: Creating Certificate with Default Name: $client_cert_file"
-                        constructor_to_setup_values
-                        print_attributes
-                else
-                        client_cert_file=$2_crt.pem
-                        client_cnf=$2.cnf
-                        echo -e "\n == Creating Certificate with Client Name: $client_cert_file =="
-                        ## Check if user provided the value for certifcate generation
-                        if [ $# -eq 9 ]; then
-                                echo " == Filling the values for certificate using Users Supplied value"
-                                echo -e "\n== Creating Certificate with User Provided attributes value =="
-                                fill_user_provided_value $3 $4 $5 $6 $7 $8 $9
-                                print_attributes
-                        else
-                                constructor_to_setup_values
-                                CN=$2
-                                echo -e "== NO ARGUMENTS == \n### WARNING! Creating Certificate with DEFAULT Value"
-                                print_attributes
-                        fi
-                fi
+	## Check if it is client request
+	if [[ "$1" == "client" ]]; then
+	 	echo -e " ### Creating Certificate for the client ### "
+		if [[ "$2" == '' ]]; then
+        		echo -e "\n ## WARNING: Creating Certificate with Default Name: $client_cert_file"
+			constructor_to_setup_values
+			print_attributes
+		else
+        		client_cert_file=$2_crt.pem
+			client_cnf=$2.cnf
+			client_key_file=$2_key.pem
+        		echo -e "\n == Creating Certificate with Client Name: $client_cert_file =="
+ 			## Check if user provided the value for certifcate generation
+			if [ $# -eq 9 ]; then
+                		echo " == Filling the values for certificate using Users Supplied value"
+                		echo -e "\n== Creating Certificate with User Provided attributes value =="
+                		fill_user_provided_value $3 $4 $5 $6 $7 $8 $9
+                		print_attributes
+			else
+				constructor_to_setup_values
+				CN=$2
+        			echo -e "== NO ARGUMENTS == \n### WARNING! Creating Certificate with DEFAULT Value"
+        			print_attributes
+			fi
+		fi
 
-
-        else
-                echo -e "### WRONG PARAMETER SUPPLIED ###"
-                echo -e "\n### SYNTAX:  ./cert_ops.sh create "DE" "HE" "Fra" "ME" "TEST" "CERT" "me@my.de"\n "
-                echo -e " ### WARNING! Creating Certificate with DEFAULT Value ## "
-                constructor_to_setup_values
-                print_attributes
-        fi
-        fi
+	
+	else
+		echo -e "### WRONG PARAMETER SUPPLIED ###"
+		echo -e "\n### SYNTAX:  ./cert_ops.sh create "DE" "HE" "Fra" "ME" "TEST" "CERT" "me@my.de"\n "
+		echo -e " ### WARNING! Creating Certificate with DEFAULT Value ## "
+		constructor_to_setup_values
+		print_attributes
+	fi
+	fi
 fi
-}
+} 
 
 ## This function creates and self-sign root CA
 create_root_ca () {
     echo -e "\n##### root CA Certificate Started #####\n"
     echo -e "$C\n$ST\n$L\n$O\n$OU\n$CN\n$EMAILAD\n\n\n" | openssl req -new -x509 -outform PEM -newkey rsa:2048 -nodes -keyout $PWD/$ca_key_file -keyform PEM -out $PWD/$ca_cert_file -days 365
-    
+  #echo -e "$C\n$ST\n$L\n$O\n$OU\n$CN\n$EMAILAD\n\n\n" | openssl req -config $CONFIG -new -x509 -extensions v3_ca -days 3650 -passin pass:whatever -passout pass:whatever -keyout $PWD/$ca_key_file -out $PWD/$ca_cert_file 
    if [ $? -eq 0 ]; then
-        echo -e "\n ##### root CA certificate SUCCESS \n"
-        echo -e "\n### Please enter Password or Press Enter to give default password (Password123)"
-        read PASS
-        ## Checks input whether it is empty or not
-        if [ -n "$PASS" ]; then
-            echo -e "\n### Thank God! You are not Lazy! :-P ###"
-        else
-            PASS="Password123"
-        fi
-
-        echo -e "### The password to be entered: $PASS"
-        echo $PASS | openssl pkcs12 -export -in $PWD/$ca_cert_file -inkey $PWD/$ca_key_file -out $PWD/ca.p12 -name "CA" -passout stdin
+	echo -e "\n ##### root CA certificate SUCCESS \n"	
+	echo -e "\n### Please enter Password or Press Enter to give default password (Password123)"
+	read PASS
+	## Checks input whether it is empty or not
+	if [ -n "$PASS" ]; then
+	    echo -e "\n### Thank God! You are not Lazy! :-P ###"
+	else
+	    PASS="Password123" 
+	fi
+	
+	echo -e "### The password to be entered: $PASS"
+	echo $PASS | openssl pkcs12 -export -in $PWD/$ca_cert_file -inkey $PWD/$ca_key_file -out $PWD/ca.p12 -name "CA" -passout stdin
     else
-        echo -e "\n ##### root CA creation failed!"
-        exit 1
+	echo -e "\n ##### root CA creation failed!"
+	exit 1
     fi
-
+    
     if [ $? -eq 0 ]; then
-        echo -e "\n ##### root CA self sign certificate SUCCESS ca.p12 \n"
+	echo -e "\n ##### root CA self sign certificate SUCCESS ca.p12 \n"
     else
-        echo -e "\n ##### root CA self signing Failed!"
-        exit 1
+	echo -e "\n ##### root CA self signing Failed!"
+	exit 1
     fi
 }
 
 #Creates server certificate and signed by CA
 create_server_cert_sign () {
     echo -e "\n== Generating and Sign Server Certificate =="
-
+    
     if [ ! -f $PWD/index.txt ]
     then
-        touch $PWD/index.txt
+	touch $PWD/index.txt
     fi
-
+    
     if [ ! -f $PWD/serial ]
     then
         echo 01 > $PWD/serial
     fi
-
+    
     if [ ! -f $PWD/$CONFIG ]
     then
-        echo -e "## Cannot find $CONFIG file.... Generating new one....!"
-        gen_config $PWD/$ca_key_file $PWD/$ca_cert_file
+	echo -e "## Cannot find $CONFIG file.... Generating new one....!"
+    	gen_config $PWD/$ca_key_file $PWD/$ca_cert_file
     fi
 
     echo "\n###### generating server cert:$server_key_file, $server_cert_file";
     echo -e "$C\n$ST\n$L\n$O\n$OU\n$CN\n$EMAILAD\n\n\n" | openssl req -config $CONFIG -new -nodes -keyout $PWD/$server_key_file -out temp.csr -days 3650
-
+    
     echo -e "y\ny\n\n" | openssl ca -config $CONFIG -policy policy_anything -out $PWD/$server_cert_file -days 3650 -key whatever -extensions xpserver_ext -infiles temp.csr
+   
+    if [ ! -f $PWD/$server_key_file ]
+    then
+		chmod 600 $PWD/$server_key_file
+    fi
 
     rm $PWD/temp.csr
 
@@ -316,7 +326,7 @@ create_server_cert_sign () {
     then
         rm `cat $PWD/serial.old`.pem
     fi
-
+    
 }
 
 # create client certificate and signed by CA.
@@ -335,14 +345,19 @@ echo " == Generating and Signing Client Certificate"
 
     if [ ! -f $PWD/$CONFIG ]
     then
-        echo -e "## Cannot find $CONFIG file.... Generating new one....!"
-        gen_config $PWD/$ca_key_file $PWD/$ca_cert_file
+	echo -e "## Cannot find $CONFIG file.... Generating new one....!"
+	gen_config $PWD/$ca_key_file $PWD/$ca_cert_file
     fi
-
+	
     echo -e "\n###### generating client cert:$client_key_file, $client_cert_file";
     echo -e "$C\n$ST\n$L\n$O\n$OU\n$CN\n$EMAILAD\n\n\n" | openssl req -config $CONFIG -new -nodes -keyout $PWD/$client_key_file -out temp.csr -days 3650
 
     echo -e "y\ny\n\n" | openssl ca -config $CONFIG -policy policy_anything -out $PWD/$client_cert_file  -days 3650 -key whatever -extensions xpclient_ext -infiles temp.csr
+	
+    if [ ! -f $PWD/$client_key_file ]
+    then
+        chmod 600 $PWD/$client_key_file
+    fi
 
     rm $PWD/temp.csr
 
@@ -352,39 +367,56 @@ echo " == Generating and Signing Client Certificate"
     fi
 }
 
+#
+# Build Diffie-Hellman parameters for the server side
+# of an SSL/TLS connection.
+#
+generate_dh_key () {
+if test $KEY_DIR; then
+    openssl dhparam -out ${KEY_DIR}/dh${KEY_SIZE}.pem ${KEY_SIZE}
+else
+    echo you must define KEY_DIR
+fi
+
+}
+
 case $1 in
     clean)
-        rm $PWD/ca* $PWD/index.txt* $PWD/ser* $PWD/client* $PWD/*.cnf
-        ;;
+	rm $PWD/ca* $PWD/index.txt* $PWD/ser* $PWD/client* $PWD/*.cnf
+	;;
     createALL)
-        check_command_line_input $@
-        create_root_ca
-        gen_server_config
-        create_server_cert_sign
-        create_client_cert_sign $@
-        ;;
+	check_command_line_input $@
+	create_root_ca
+	gen_server_config
+	create_server_cert_sign
+	create_client_cert_sign $@
+	;;
     ca)
-        check_command_line_input $@
-        create_root_ca
-        ;;
+	check_command_line_input $@
+        create_root_ca	
+	;;
     server)
-        check_command_line_input $@
-
-        if [ ! -f $PWD/$server_cnf ]; then
-                gen_server_config
+	check_command_line_input $@
+	
+	if [ ! -f $PWD/$server_cnf ]; then
+      		gen_server_config
         fi
         create_server_cert_sign
-        ;;
+	;;
     client)
-        check_command_line_input $@
-
+	check_command_line_input $@
+	
         if [ ! -f $PWD/$client_cnf ]; then
              gen_client_config
         fi
-        create_client_cert_sign $@
-
-        ;;
-    *)
-        echo -e "USAGE: \n $0 clean #removes all cerficats and keys \n $0 createALL #Creates CA, Server & client Certificate \n $0 ca #Creates CA \n $0 server $0 \n client <clientCertificateName> #Creates client certificate"
-        ;;
+	create_client_cert_sign $@
+	
+	;;
+    dh)
+	generate_dh_key
+	;;
+    *) 
+	echo -e "USAGE (See README for detail description): \n $0 clean #removes all cerficates and keys \n $0 createALL #Creates CA, Server & client Certificate \n $0 ca #Creates CA \n $0 server \n $0 client <clientCertificateName> #Creates client certificate \n $0 dh # builds Diffie-Hellman parameters for the server side"
+	;;
 esac
+
