@@ -263,8 +263,8 @@ fi
 create_root_ca () {
     echo -e "\n##### root CA Certificate Started #####\n"
     echo -e "$C\n$ST\n$L\n$O\n$OU\n$CN\n$EMAILAD\n\n\n" | openssl req -new -x509 -outform PEM -newkey rsa:2048 -nodes -keyout $PWD/$ca_key_file -keyform PEM -out $PWD/$ca_cert_file -days 365
-  #echo -e "$C\n$ST\n$L\n$O\n$OU\n$CN\n$EMAILAD\n\n\n" | openssl req -config $CONFIG -new -x509 -extensions v3_ca -days 3650 -passin pass:whatever -passout pass:whatever -keyout $PWD/$ca_key_file -out $PWD/$ca_cert_file 
-   if [ $? -eq 0 ]; then
+   
+    if [ $? -eq 0 ]; then
 	echo -e "\n ##### root CA certificate SUCCESS \n"	
 	echo -e "\n### Please enter Password or Press Enter to give default password (Password123)"
 	read PASS
